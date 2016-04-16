@@ -1,0 +1,170 @@
+//Sources: howtomechatronics.com, Tutorial for Arduino: Serial Communication and Processing - Jeremy Blum
+
+import processing.video.*;
+import processing.serial.*; // imports library for serial communication
+import java.awt.event.KeyEvent; // imports library for reading the data from the serial port
+import java.io.IOException;
+
+Serial myPort; // defining Serial object
+
+//defining Movie object
+Movie first; 
+Movie second;
+Movie third;
+Movie fourth;
+
+//variables    
+String lightValue="";
+String distance="";
+String waterButton="";
+
+String data="";
+String data2="";
+
+int iLightValue, iDistance, iWaterButton;
+int index1=0;
+int index2=0;
+
+PFont f;
+String textDistance, textLightValue, textWaterButton;
+float w;
+
+
+boolean isPlaying1, isPlaying2, isPlaying3, isPlaying4 = false;
+
+void setup() {
+
+  size (1920, 1080);// same as video size
+  smooth();
+  frameRate(29); // same as video framte rate
+  background(255);
+
+  myPort = new Serial(this, "COM3", 9600); // starts the serial communication
+  myPort.bufferUntil('.'); // reads the data from the serial port up to the character '.'
+
+  f = createFont("Amienne", 30, true);
+
+  //videos
+  first = new Movie(this, "first.mp4");
+  second = new Movie(this, "second.mp4");
+  third = new Movie(this, "third.mp4");
+  fourth = new Movie(this, "fourth.mp4");
+
+}
+
+void draw() {
+  // to test the sensors
+  //background(255);
+  //disp();
+  
+  //first video plays on start
+
+  if (isPlaying1 == false) {
+    first.play();
+    isPlaying1 = true;
+  }
+
+    
+  if (isPlaying1) {
+    if (first.available()) {
+      first.read();
+    } 
+
+    image(first, 0, 0);
+  }
+  
+  
+  //second video plays when car is moved - Photo sensor value changes
+
+  if (isPlaying2 == false && iLightValue < 300) {
+    second.play();
+    isPlaying2 = true;
+  }
+
+    
+  if (isPlaying2) {
+    if (second.available()) {
+      second.read();
+    } 
+
+    image(second, 0, 0);
+  }
+  
+  // third video plays when saw is moved - value of Proximity sensor changes
+  
+  if (isPlaying3 == false && iDistance < 15) {
+    third.play();
+    isPlaying3 = true;
+  }
+
+
+  if (isPlaying3) {
+    if (third.available()) {
+      third.read();
+    } 
+
+    image(third, 0, 0);
+  }
+  
+  //fourth video plays when water is poured - water detection circuit
+  
+  if (isPlaying4 == false && iWaterButton == 1) {
+    fourth.play();
+    isPlaying4 = true;
+  }
+
+
+  if (isPlaying4) {
+    if (fourth.available()) {
+      fourth.read();
+    } 
+
+    image(fourth, 0, 0);
+  }
+}
+
+/* void movieEvent(Movie m) { 
+ //if(iLightValue > 300){
+ m.read(); 
+ //}
+ }*/
+
+void serialEvent (Serial myPort) { 
+
+  // starts reading data from the Serial Port
+  // reads the data from the Serial Port up to the character '.' and puts it into the String variable "data".
+  data = myPort.readStringUntil('.');
+  data = data.substring(0, data.length()-1);
+
+  index1 = data.indexOf(","); // find the character ',' and puts it into the variable "index1"
+  lightValue = data.substring(0, index1); // read the data from position "0" to position of the variable index1
+  data2= data.substring(index1+1, data.length()); // read the data from position "index1" to the end of the data 
+  
+  index2 = data2.indexOf(",");
+  waterButton = data2.substring(0, index2);
+  distance = data2.substring(index2+1, data2.length()); // read the data from position "index1" to the end of the data 
+
+  
+  
+  
+  // converts the String variables into Integer
+  iLightValue = int(lightValue);
+  iWaterButton = int(waterButton);
+  iDistance = int(distance);
+}
+
+void disp() {
+  //display function to check if sensors are working
+
+  fill(120);
+  textFont(f, 30);
+  //w = textWidth(s);
+  textDistance = "Proximity sensor: " + distance;
+  textLightValue = "Photo sensor: " + lightValue;
+  textWaterButton = "Water button state: " + waterButton;
+  text(textDistance, 100, 100);
+  text(textLightValue, 200, 200);
+  text(textWaterButton, 300, 300);
+}
+
+

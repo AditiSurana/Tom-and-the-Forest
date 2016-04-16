@@ -1,0 +1,103 @@
+/*Sources: 
+Arduino built-in examples
+programmingelectronics.com
+
+*/
+
+
+
+// Defines Tirg and Echo pins of the Ultrasonic Sensor (Proximity sensor)
+const int trigPin = 10;
+const int echoPin = 11;
+
+// Defines pins for the Photo Sensor
+int sensorValue = 0;
+int sensorPin = 0;
+int ledPin1 =  9;    //to test
+
+// For water detection
+const int buttonPin = 8;     
+const int ledPin2 = 13;  // to test
+int buttonState = 0; 
+
+// Variables for the duration and the distance for Proximity sensor
+long duration;
+int distance, finalDistance;
+
+//variables for smoothing
+const int numReadings = 10;
+int readings[numReadings];    
+int readIndex = 0;              
+int total = 0;                  
+int average = 0;                
+
+
+void setup() {
+  pinMode(trigPin, OUTPUT); 
+  pinMode(echoPin, INPUT);
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(buttonPin, INPUT);
+  Serial.begin(9600); 
+}
+
+void loop() {
+  //working with photoresistor 
+  sensorValue = analogRead(sensorPin); 
+  /*if(sensorValue > 300){
+    digitalWrite(ledPin1, HIGH);
+  }else{
+    digitalWrite(ledPin1, LOW);
+  }*/
+  
+  //Proximity sensor
+  finalDistance = calculateDistance();
+
+  //Water detection
+  buttonState = digitalRead(buttonPin);
+  /*if (buttonState == HIGH) {
+    digitalWrite(ledPin2, HIGH);
+  }
+  else {
+    digitalWrite(ledPin2, LOW);
+  }*/
+  
+  
+  //Sending values to Processing
+  Serial.print(sensorValue); //photo sensor
+  Serial.print(",");
+  Serial.print(buttonState); //water detection
+  Serial.print(",");
+  Serial.print(finalDistance); //proximity sensor
+  Serial.print("."); 
+
+  delay(50);
+  
+}
+
+// Function for calculating the distance measured by the Ultrasonic sensor
+int calculateDistance(){ 
+  
+  digitalWrite(trigPin, LOW); 
+  delayMicroseconds(2);
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigPin, HIGH); 
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH); // Reads the echoPin, returns the sound wave travel time in microseconds
+  distance= duration*0.034/2;
+
+  //smoothing on distance
+  total = total - readings[readIndex];
+  readings[readIndex] = distance;
+  total = total + readings[readIndex];
+  readIndex = readIndex + 1;
+
+  if (readIndex >= numReadings)
+    readIndex = 0;
+
+  average = total / numReadings;  
+  return average;
+}
+
+
